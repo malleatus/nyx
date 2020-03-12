@@ -8,11 +8,18 @@
     "Robert Jackson <me@rwjblue.com>"
   ],
   "main": "dist/index.js",
+  "bin": "./dist/index.js",
   "scripts": {
-    "build:ts": "tsc",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint test:jest",
     "test:jest": "jest"
+  },
+  "dependencies": {
+    "@types/yargs": "^15.0.4",
+    "hard-rejection": "^2.1.0",
+    "yargs": "^15.3.0"
   },
   "devDependencies": {
     "@types/jest": "^25.1.4",
@@ -29,8 +36,7 @@
     "release-it": "^13.0.2",
     "release-it-lerna-changelog": "^2.0.0",
     "ts-jest": "^25.2.1",
-    "typescript": "~3.8.3",
-    "yargs": "^15.3.0"
+    "typescript": "~3.8.3"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
