@@ -30,7 +30,7 @@ jobs:
       - name: yarn install
         run: yarn --frozen-lockfile --install
       - name: test
-        run: yarn test
+        run: yarn test:jest
 
   test-node:
     name: 'node:${{matrix.node}}' # rely on matrix for most of name
@@ -48,4 +48,4 @@ jobs:
       - name: yarn install
         run: yarn --frozen-lockfile --install
       - name: test
-        run: yarn test
+        run: yarn test:jest
