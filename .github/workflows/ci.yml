@@ -33,7 +33,7 @@ jobs:
         run: yarn test
 
   test-node:
-    name: 't:node:' # rely on matrix for most of name
+    name: 'node:${{matrix.node}}' # rely on matrix for most of name
     needs: [lint, test]
     runs-on: ubuntu-latest
     strategy:
