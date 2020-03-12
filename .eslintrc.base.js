@@ -5,25 +5,34 @@ module.exports = {
     ecmaVersion: 2017,
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint'],
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/eslint-recommended'],
+  plugins: ['@typescript-eslint', 'node'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:node/recommended',
+  ],
   env: {
     node: true,
   },
   rules: {},
   overrides: [
-    // test files
     {
-      files: ['__tests__/**/*.[jt]s', '**/*.test.[jt]s'],
-      env: {
-        jest: true,
+      // typescript files
+      files: ['**/*.ts'],
+      settings: {
+        node: {
+          tryExtensions: ['.js', '.json', '.ts'],
+        },
+      },
+      rules: {
+        'node/no-unsupported-features/es-syntax': ['error', { ignores: ['modules'] }],
       },
     },
     {
-      files: ['tests/**/*.js'],
-      rules: {
-        '@typescript-eslint/no-var-requires': 'off',
-        '@typescript-eslint/explicit-function-return-type': 'off',
+      // test files
+      files: ['__tests__/**/*.[jt]s', '**/*.test.[jt]s'],
+      env: {
+        jest: true,
       },
     },
   ],
