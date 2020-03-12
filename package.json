@@ -1,0 +1,47 @@
+{
+  "name": "nyx.js",
+  "version": "0.1.0",
+  "repository": "https://github.com/hjdivad/nyx.js.git",
+  "license": "MIT",
+  "author": "David J. Hamilton <dhamilton@linkedin.com>",
+  "contributors": [
+    "David J. Hamilton <dhamilton@linkedin.com>"
+  ],
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.22.0",
+    "@typescript-eslint/parser": "^2.22.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^4.2.3",
+    "jest": "^25.1.0",
+    "prettier": "^1.19.1",
+    "release-it": "^13.0.2",
+    "release-it-lerna-changelog": "^2.0.0",
+    "typescript": "~3.8.3",
+    "yargs": "^15.3.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "plugins": {
+      "release-it-lerna-changelog": {
+        "infile": "CHANGELOG.md",
+        "launchEditor": true
+      }
+    },
+    "git": {
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true,
+      "tokenRef": "GITHUB_AUTH"
+    }
+  },
+  "volta": {
+    "node": "12.16.1",
+    "yarn": "1.22.4"
+  }
+}
