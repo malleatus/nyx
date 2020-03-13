@@ -52,7 +52,7 @@ export default async function reportFailure({ env }: MainArgs) {
 
   const github = new Octokit({
     auth: token,
-    userAgent: 'nyx.js nightly tests issue reporter',
+    userAgent: '@malleatus/nyx failure reporter',
   });
 
   const issueTitle = getIssueTitle(runId);

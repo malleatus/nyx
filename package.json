@@ -1,7 +1,7 @@
 {
-  "name": "nyx.js",
+  "name": "@malleatus/nyx",
   "version": "0.1.0",
-  "repository": "https://github.com/hjdivad/nyx.js.git",
+  "repository": "https://github.com/malleatus/nyx.git",
   "license": "MIT",
   "author": "David J. Hamilton <dhamilton@linkedin.com>",
   "contributors": [
@@ -47,6 +47,7 @@
     "node": "10.* || >= 12.*"
   },
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "release-it": {
