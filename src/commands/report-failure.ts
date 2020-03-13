@@ -30,7 +30,7 @@ async function createIssue({ github, runId, owner, repo }: CreateIssueArgs) {
   const url = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
   const body = `Nightly run failed on: ${date}\n${url}`;
 
-  github.issues.create({
+  await github.issues.create({
     owner,
     repo,
     title,
@@ -67,5 +67,5 @@ export default async function reportFailure({ env }: MainArgs) {
     return;
   }
 
-  createIssue({ github, runId, owner, repo });
+  await createIssue({ github, runId, owner, repo });
 }
