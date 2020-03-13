@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import * as yargs from 'yargs';
 import setupHardRejection from 'hard-rejection';
 import reportFailure from './commands/report-failure';

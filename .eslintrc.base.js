@@ -35,5 +35,11 @@ module.exports = {
         jest: true,
       },
     },
+    {
+      files: ['src/index.ts'],
+      rules: {
+        'node/shebang': 0,
+      },
+    },
   ],
 };
