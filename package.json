@@ -10,10 +10,12 @@
   "main": "dist/index.js",
   "bin": "./dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm-run-all build:clean build:ts",
+    "build:clean": "rimraf dist",
+    "build:ts": "tsc",
     "build:watch": "tsc --watch",
     "lint": "eslint --cache . --ext js,ts",
-    "test": "npm-run-all lint test:jest",
+    "test": "npm-run-all lint build test:jest",
     "test:jest": "jest"
   },
   "dependencies": {
@@ -37,6 +39,7 @@
     "prettier": "^1.19.1",
     "release-it": "^13.0.2",
     "release-it-lerna-changelog": "^2.0.0",
+    "rimraf": "^3.0.2",
     "ts-jest": "^25.2.1",
     "typescript": "~3.8.3"
   },
