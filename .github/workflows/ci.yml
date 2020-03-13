@@ -33,13 +33,16 @@ jobs:
         run: yarn test
 
   test-node:
-    name: 'node:${{matrix.node}}' # rely on matrix for most of name
+    name: 'node:${{matrix.node}}:${{matrix.os}}' # rely on matrix for most of name
     needs: [lint, test]
-    runs-on: ubuntu-latest
+    runs-on: "${{matrix.os}}-latest"
+
     strategy:
       fail-fast: false
       matrix:
         node: [10.x, 12.x, 13.x] # LTS + current
+        os: [ubuntu, macOS, windows]
+
     steps:
       - uses: actions/checkout@v2
       - uses: volta-cli/action@v1
