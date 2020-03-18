@@ -10,7 +10,7 @@ function assert(value: unknown, message: string): asserts value {
   }
 }
 
-function getIssueTitle(runId: string) {
+function getIssueTitle(runId: string): string {
   return `Nightly Run Failure: ${runId}`;
 }
 
@@ -24,7 +24,7 @@ interface CreateIssueArgs {
 
 // TODO: report commit range
 // TODO: even more betterer bisect commit range (possibly as a separate workflow)
-async function createIssue({ github, runId, owner, repo }: CreateIssueArgs) {
+async function createIssue({ github, runId, owner, repo }: CreateIssueArgs): Promise<void> {
   const title = getIssueTitle(runId);
   const date = m().format('D MMM YYYY');
   const url = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
@@ -42,7 +42,7 @@ async function createIssue({ github, runId, owner, repo }: CreateIssueArgs) {
 interface MainArgs {
   env: NodeJS.ProcessEnv;
 }
-export default async function reportFailure({ env }: MainArgs) {
+export default async function reportFailure({ env }: MainArgs): Promise<void> {
   const { GITHUB_TOKEN: token, RUN_ID: runId, OWNER: owner, REPO: repo } = env;
 
   assert(!!token, `env GITHUB_TOKEN must be set`);
