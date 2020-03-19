@@ -14,14 +14,27 @@ module.exports = {
   env: {
     node: true,
   },
-  rules: {},
+  rules: {
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        // default values
+        vars: 'all',
+        args: 'after-used',
+        caughtErrors: 'none',
+
+        // customizing to change ignoreRestSiblings to `true`
+        ignoreRestSiblings: true,
+      },
+    ],
+  },
   overrides: [
     {
       // typescript files
       files: ['**/*.ts'],
       settings: {
         node: {
-          tryExtensions: ['.js', '.json', '.ts'],
+          tryExtensions: ['.js', '.json', '.d.ts', '.ts'],
         },
       },
       rules: {
@@ -33,6 +46,9 @@ module.exports = {
       files: ['__tests__/**/*.[jt]s', '**/*.test.[jt]s'],
       env: {
         jest: true,
+      },
+      rules: {
+        'node/no-unpublished-import': 'off',
       },
     },
   ],
