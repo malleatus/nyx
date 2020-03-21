@@ -52,11 +52,22 @@ describe('src/commands/report-failure.ts', function() {
     polly = new Polly(recordingName, {
       adapters: ['node-http'],
       persister: SanitizingPersister,
+      recordIfMissing: process.env.RECORD_HAR !== undefined,
       matchRequestsBy: {
         headers(headers: Headers): Headers {
-          // ensure that the authorization token is not used to match
-          // recordings
-          const { authorization, ...rest } = headers;
+          /*
+            remove certain headers from being used to match recordings:
+
+            * authorization -- Avoid saving any authorization codes into
+              `.har` files, and avoid differences when two different users run
+              the tests
+            * user-agent -- @octokit/rest **always** appends Node version and
+              platform information into the userAgent (even when the Octokit
+              instance has a custom userAgent). See
+              https://github.com/octokit/rest.js/issues/907#issuecomment-422217573
+              for a quick summary.
+          */
+          const { authorization, 'user-agent': userAgent, ...rest } = headers;
 
           return rest;
         },
