@@ -108,7 +108,7 @@ describe('src/commands/report-failure.ts', function() {
         OWNER: 'malleatus',
         REPO: 'nyx-example',
         RUN_ID: '123456',
-        GITHUB_TOKEN: GITHUB_AUTH,
+        GITHUB_TOKEN: GITHUB_AUTH || 'fake-auth-token',
       },
     });
 
