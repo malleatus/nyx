@@ -5,6 +5,9 @@ import FSPersister from '@pollyjs/persister-fs';
 import reportFailure from './report-failure';
 import setupHardRejection from 'hard-rejection';
 import { Archive } from '@tracerbench/har';
+import { Octokit } from '@octokit/rest';
+
+const GITHUB_AUTH = process.env.GITHUB_AUTH;
 
 declare module '@pollyjs/persister' {
   export default interface Persister {
@@ -23,7 +26,7 @@ class SanitizingPersister extends FSPersister {
 
   get options(): PollyConfig['persisterOptions'] {
     return {
-      recordingsDir: path.resolve(__dirname, '__recordings__'),
+      recordingsDir: path.resolve(__dirname, '..', '..', '.recordings'),
     };
   }
 
@@ -43,6 +46,7 @@ Polly.register(NodeHttpAdapter);
 
 describe('src/commands/report-failure.ts', function() {
   let polly: Polly;
+  let github: Octokit;
 
   function setupPolly(recordingName: string, config: PollyConfig = {}): Polly {
     polly = new Polly(recordingName, {
@@ -63,6 +67,13 @@ describe('src/commands/report-failure.ts', function() {
     return polly;
   }
 
+  beforeEach(() => {
+    github = new Octokit({
+      auth: GITHUB_AUTH,
+      userAgent: '@malleatus/nyx failure reporter',
+    });
+  });
+
   afterEach(async () => {
     if (polly) {
       await polly.stop();
@@ -72,13 +83,31 @@ describe('src/commands/report-failure.ts', function() {
   test('creates an issue', async function() {
     setupPolly('basic-test');
 
+    let issues = await github.issues.listForRepo({
+      owner: 'malleatus',
+      repo: 'nyx-example',
+      labels: 'CI',
+      state: 'open',
+    });
+
+    expect(issues.data.length).toEqual(0);
+
     await reportFailure({
       env: {
         OWNER: 'malleatus',
-        REPO: 'nyx',
+        REPO: 'nyx-example',
         RUN_ID: '123456',
-        GITHUB_TOKEN: process.env.GITHUB_AUTH,
+        GITHUB_TOKEN: GITHUB_AUTH,
       },
     });
+
+    issues = await github.issues.listForRepo({
+      owner: 'malleatus',
+      repo: 'nyx-example',
+      labels: 'CI',
+      state: 'open',
+    });
+
+    expect(issues.data.length).toEqual(1);
   });
 });
