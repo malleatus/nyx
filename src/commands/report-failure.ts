@@ -57,7 +57,7 @@ export default async function reportFailure({ env }: MainArgs): Promise<void> {
   const issueTitle = getIssueTitle(runId);
   // https://help.github.com/en/github/searching-for-information-on-github/searching-issues-and-pull-requests
   const issueSearch = await github.search.issuesAndPullRequests({
-    q: `repo:${owner}/${repo} is:issue label:CI in:title ${issueTitle}`,
+    q: `repo:${owner}/${repo} state:open is:issue label:CI in:title ${issueTitle}`,
   });
 
   if (issueSearch.data.total_count > 0) {
