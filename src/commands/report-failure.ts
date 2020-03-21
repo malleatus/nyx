@@ -15,8 +15,7 @@ function getIssueTitle(runId: string): string {
 }
 
 interface CreateIssueArgs {
-  // github: Octokit; // makes ts sad for some reason
-  github: any;
+  github: Octokit;
   runId: string;
   owner: string;
   repo: string;
