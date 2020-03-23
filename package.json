@@ -10,9 +10,11 @@
   "main": "dist/index.js",
   "bin": "./dist/index.js",
   "scripts": {
-    "build": "npm-run-all build:clean build:ts",
+    "build": "npm-run-all build:clean build:ts build:ts:defs",
     "build:clean": "rimraf dist",
+    "prepare": "npm-run-all build",
     "build:ts": "tsc",
+    "build:ts:defs": "tsc --declaration --emitDeclarationOnly",
     "build:watch": "tsc --watch",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint build test:jest",
@@ -52,6 +54,13 @@
     "ts-jest": "^25.2.1",
     "typescript": "~3.8.3"
   },
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json",
+    "dist/*",
+    "!dist/**/*.test.*"
+  ],
   "engines": {
     "node": "10.* || >= 12.*"
   },
