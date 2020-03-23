@@ -58,7 +58,8 @@
     "*.md",
     "LICENSE",
     "package.json",
-    "dist/*"
+    "dist/*",
+    "!dist/**/*.test.js"
   ],
   "engines": {
     "node": "10.* || >= 12.*"
