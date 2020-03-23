@@ -13,7 +13,7 @@ yargs
     () => {
       // setup command options
     },
-    async function () {
+    async function() {
       reportFailure({
         env: process.env,
       });
