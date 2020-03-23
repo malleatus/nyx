@@ -33,8 +33,8 @@ class SanitizingPersister extends FSPersister {
 
   // ensure that the authorization token is not written to disk
   saveRecording(recordingId: string, data: Archive): void {
-    data.log.entries.forEach(entry => {
-      entry.request.headers = entry.request.headers.filter(h => h.name !== 'authorization');
+    data.log.entries.forEach((entry) => {
+      entry.request.headers = entry.request.headers.filter((h) => h.name !== 'authorization');
     });
 
     return super.saveRecording(recordingId, data);
@@ -45,7 +45,7 @@ setupHardRejection();
 
 Polly.register(NodeHttpAdapter);
 
-describe('src/commands/report-failure.ts', function() {
+describe('src/commands/report-failure.ts', function () {
   let polly: Polly;
   let github: Octokit;
   let clock: FakeClock;
@@ -97,7 +97,7 @@ describe('src/commands/report-failure.ts', function() {
     clock.uninstall();
   });
 
-  test('creates an issue', async function() {
+  test('creates an issue', async function () {
     setupPolly('basic-test');
 
     let issues = await github.issues.listForRepo({
