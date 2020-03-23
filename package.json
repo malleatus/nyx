@@ -55,11 +55,11 @@
     "typescript": "~3.8.3"
   },
   "files": [
-    "*.md",
+    "CHANGELOG.md",
     "LICENSE",
     "package.json",
     "dist/*",
-    "!dist/**/*.test.js"
+    "!dist/**/*.test.*"
   ],
   "engines": {
     "node": "10.* || >= 12.*"
