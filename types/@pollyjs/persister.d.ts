@@ -1,7 +1,7 @@
 import { Archive } from '@tracerbench/har';
 
 declare module '@pollyjs/persister' {
-  export default interface Persister {
+  export default class Persister {
     findRecording(recordingId: string): Archive;
 
     saveRecording(recordingId: string, data: Archive): void;
