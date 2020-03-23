@@ -42,6 +42,13 @@ module.exports = {
       },
     },
     {
+      // local vendored types are not published
+      files: ['types/**/*.d.ts'],
+      rules: {
+        'node/no-unpublished-import': 'off',
+      },
+    },
+    {
       // test files
       files: ['__tests__/**/*.[jt]s', '**/*.test.[jt]s'],
       env: {

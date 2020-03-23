@@ -10,16 +10,6 @@ import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
 
 const GITHUB_AUTH = process.env.GITHUB_AUTH;
 
-declare module '@pollyjs/persister' {
-  export default interface Persister {
-    findRecording(recordingId: string): Archive;
-
-    saveRecording(recordingId: string, data: Archive): void;
-
-    deleteRecording(recordingId: string): void;
-  }
-}
-
 class SanitizingPersister extends FSPersister {
   static get id(): string {
     return 'sanitizing-fs';
