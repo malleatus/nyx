@@ -6,6 +6,10 @@
     "esModuleInterop": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+
+    "paths": {
+      "*": "types/*"
+    }
   }
 }
