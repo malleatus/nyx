@@ -6,6 +6,7 @@ import reportFailure from './report-failure';
 import setupHardRejection from 'hard-rejection';
 import { Archive } from '@tracerbench/har';
 import { Octokit } from '@octokit/rest';
+import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
 
 const GITHUB_AUTH = process.env.GITHUB_AUTH;
 
@@ -32,8 +33,8 @@ class SanitizingPersister extends FSPersister {
 
   // ensure that the authorization token is not written to disk
   saveRecording(recordingId: string, data: Archive): void {
-    data.log.entries.forEach((entry) => {
-      entry.request.headers = entry.request.headers.filter((h) => h.name !== 'authorization');
+    data.log.entries.forEach(entry => {
+      entry.request.headers = entry.request.headers.filter(h => h.name !== 'authorization');
     });
 
     return super.saveRecording(recordingId, data);
@@ -44,9 +45,10 @@ setupHardRejection();
 
 Polly.register(NodeHttpAdapter);
 
-describe('src/commands/report-failure.ts', function () {
+describe('src/commands/report-failure.ts', function() {
   let polly: Polly;
   let github: Octokit;
+  let clock: FakeClock;
 
   function setupPolly(recordingName: string, config: PollyConfig = {}): Polly {
     polly = new Polly(recordingName, {
@@ -83,15 +85,19 @@ describe('src/commands/report-failure.ts', function () {
       auth: GITHUB_AUTH,
       userAgent: '@malleatus/nyx failure reporter',
     });
+    clock = FakeTimers.install({
+      now: new Date('3 April 1994 13:14 GMT'),
+    });
   });
 
   afterEach(async () => {
     if (polly) {
       await polly.stop();
     }
+    clock.uninstall();
   });
 
-  test('creates an issue', async function () {
+  test('creates an issue', async function() {
     setupPolly('basic-test');
 
     let issues = await github.issues.listForRepo({
