@@ -7,9 +7,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noImplicitAny": true,
+    "baseUrl": "src",
 
     "paths": {
-      "*": "types/*"
+      "*": ["types/*"]
     }
   }
 }
