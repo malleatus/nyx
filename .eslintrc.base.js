@@ -35,6 +35,13 @@ module.exports = {
       settings: {
         node: {
           tryExtensions: ['.js', '.json', '.d.ts', '.ts'],
+
+          convertPath: [
+            {
+              include: ['src/**/*.ts'],
+              replace: ['^src/(.+)\\.ts$', 'dist/$1.js'],
+            },
+          ],
         },
       },
       rules: {
