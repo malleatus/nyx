@@ -1,14 +1,7 @@
 // https://octokit.github.io/rest.js/v17#issues-list
 import { Octokit } from '@octokit/rest';
 import m from 'moment';
-
-// TODO: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/42786
-// import * as assert from 'assert';
-function assert(value: unknown, message: string): asserts value {
-  if (!value) {
-    throw new Error(message);
-  }
-}
+import assert from '../utils/assert';
 
 function getIssueTitle(runId: string): string {
   return `Nightly Run Failure: ${runId}`;
