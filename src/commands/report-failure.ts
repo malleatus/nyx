@@ -1,7 +1,6 @@
 // https://octokit.github.io/rest.js/v17#issues-list
 import { Octokit } from '@octokit/rest';
 import m from 'moment';
-import assert from '../utils/assert';
 
 function getIssueTitle(runId: string): string {
   return `Nightly Run Failure: ${runId}`;
@@ -32,16 +31,18 @@ async function createIssue({ github, runId, owner, repo }: CreateIssueArgs): Pro
 }
 
 interface MainArgs {
-  env: NodeJS.ProcessEnv;
+  owner: string;
+  repo: string;
+  runId: string;
+  token: string;
 }
-export default async function reportFailure({ env }: MainArgs): Promise<void> {
-  const { GITHUB_TOKEN: token, RUN_ID: runId, OWNER: owner, REPO: repo } = env;
 
-  assert(!!token, `env GITHUB_TOKEN must be set`);
-  assert(!!runId, `env RUN_ID must be set`);
-  assert(!!owner, `env OWNER must be set`);
-  assert(!!repo, `env REPO must be set`);
-
+export default async function reportFailure({
+  owner,
+  repo,
+  token,
+  runId,
+}: MainArgs): Promise<void> {
   const github = new Octokit({
     auth: token,
     userAgent: '@malleatus/nyx failure reporter',

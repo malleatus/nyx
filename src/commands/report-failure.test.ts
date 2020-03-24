@@ -100,12 +100,10 @@ describe('src/commands/report-failure.ts', function () {
     expect(issues.data.length).toEqual(0);
 
     await reportFailure({
-      env: {
-        OWNER: 'malleatus',
-        REPO: 'nyx-example',
-        RUN_ID: '123456',
-        GITHUB_TOKEN: GITHUB_AUTH || 'fake-auth-token',
-      },
+      owner: 'malleatus',
+      repo: 'nyx-example',
+      runId: '123456',
+      token: GITHUB_AUTH || 'fake-auth-token',
     });
 
     issues = await github.issues.listForRepo({
