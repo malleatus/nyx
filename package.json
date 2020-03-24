@@ -69,7 +69,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "lint-staged": {
-    "*.{js,ts}": "yarn lint"
+    "*.{js,ts}": "eslint --ext js,ts"
   },
   "husky": {
     "hooks": {
