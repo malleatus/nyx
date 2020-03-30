@@ -51,7 +51,7 @@
     "release-it": "^13.3.2",
     "release-it-lerna-changelog": "^2.1.2",
     "rimraf": "^3.0.2",
-    "ts-jest": "^25.2.1",
+    "ts-jest": "^25.3.0",
     "typescript": "~3.8.3"
   },
   "files": [
