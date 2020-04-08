@@ -603,10 +603,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@tracerbench/har@^3.0.14":
-  version "3.0.14"
-  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-3.0.14.tgz#c70c3b7952cd0436c8399ff7d2bc801b7421ca63"
-  integrity sha512-N2P+hbhf78mIKCfuPASTytxcK1Ho0qL9F5+9upb5rfRcxURx3nkt09l9lhw6ZKNthv0RMrg+qjy7jLOf8s3OUQ==
+"@tracerbench/har@^3.0.15":
+  version "3.0.15"
+  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-3.0.15.tgz#52b4552fffbe027b6abf614b72b11674cf71c2e0"
+  integrity sha512-HNEExR/jP6tmEoYkDfc9jXqvyNQZ2ADMCx9ZAazwAQRFgMJHD2+jU18kB+PJPkIMKA3e9DjgzIQcvBPONjpzKQ==
 
 "@types/babel__core@^7.1.0":
   version "7.1.6"
