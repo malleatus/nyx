@@ -27,6 +27,7 @@ module.exports = {
         ignoreRestSiblings: true,
       },
     ],
+    'prefer-const': 'off',
   },
   overrides: [
     {
@@ -63,6 +64,7 @@ module.exports = {
       },
       rules: {
         'node/no-unpublished-import': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
       },
     },
   ],

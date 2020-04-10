@@ -18,7 +18,8 @@
     "build:watch": "tsc --watch",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint build test:jest",
-    "test:jest": "jest"
+    "test:jest": "jest",
+    "test:jest:debug": "NODE_OPTIONS='--inspect-brk' jest --testTimeout=0 --runInBand"
   },
   "dependencies": {
     "@octokit/rest": "^17.2.0",
