@@ -8,7 +8,7 @@ import { Archive } from '@tracerbench/har';
 import { Octokit } from '@octokit/rest';
 import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
 
-const GITHUB_AUTH = process.env.GITHUB_AUTH;
+const GITHUB_AUTH = process.env.GITHUB_AUTH_MALLEATUS_USER_A;
 
 class SanitizingPersister extends FSPersister {
   static get id(): string {
@@ -23,8 +23,8 @@ class SanitizingPersister extends FSPersister {
 
   // ensure that the authorization token is not written to disk
   saveRecording(recordingId: string, data: Archive): void {
-    data.log.entries.forEach(entry => {
-      entry.request.headers = entry.request.headers.filter(h => h.name !== 'authorization');
+    data.log.entries.forEach((entry) => {
+      entry.request.headers = entry.request.headers.filter((h) => h.name !== 'authorization');
     });
 
     return super.saveRecording(recordingId, data);
@@ -35,7 +35,7 @@ setupHardRejection();
 
 Polly.register(NodeHttpAdapter);
 
-describe('src/commands/report-failure.ts', function() {
+describe('src/commands/report-failure.ts', function () {
   let polly: Polly;
   let github: Octokit;
   let clock: FakeClock;
@@ -87,7 +87,7 @@ describe('src/commands/report-failure.ts', function() {
     clock.uninstall();
   });
 
-  test('creates an issue', async function() {
+  test('creates an issue', async function () {
     setupPolly('basic-test');
 
     let issues = await github.issues.listForRepo({
@@ -112,6 +112,17 @@ describe('src/commands/report-failure.ts', function() {
       labels: 'CI',
       state: 'open',
     });
+
+    // TODO: clean up the cleanup
+    for (let issue of issues.data) {
+      await github.issues.update({
+        owner: 'malleatus',
+        repo: 'nyx-example',
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        issue_number: issue.number,
+        state: 'closed',
+      });
+    }
 
     expect(issues.data.length).toEqual(1);
   });
