@@ -8,7 +8,7 @@ import { Archive } from '@tracerbench/har';
 import { Octokit } from '@octokit/rest';
 import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
 
-const GITHUB_AUTH = process.env.GITHUB_AUTH;
+const GITHUB_AUTH = process.env.GITHUB_AUTH_MALLEATUS_USER_A;
 
 class SanitizingPersister extends FSPersister {
   static get id(): string {
@@ -112,6 +112,17 @@ describe('src/commands/report-failure.ts', function () {
       labels: 'CI',
       state: 'open',
     });
+
+    // TODO: clean up the cleanup
+    for (let issue of issues.data) {
+      await github.issues.update({
+        owner: 'malleatus',
+        repo: 'nyx-example',
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        issue_number: issue.number,
+        state: 'closed',
+      });
+    }
 
     expect(issues.data.length).toEqual(1);
   });
