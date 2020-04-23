@@ -2,11 +2,14 @@ import * as path from 'path';
 import { Polly, PollyConfig, Headers } from '@pollyjs/core';
 import NodeHttpAdapter from '@pollyjs/adapter-node-http';
 import FSPersister from '@pollyjs/persister-fs';
-import merge, { ExitCode } from './merge';
+import merge, { mergeByContext, ExitCode } from './merge';
 import setupHardRejection from 'hard-rejection';
 import { Archive } from '@tracerbench/har';
 import { Octokit } from '@octokit/rest';
 import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
+import { GitHubContext } from '../utils/read-context';
+
+type MergeArgs = Parameters<typeof merge>[0];
 
 class SanitizingPersister extends FSPersister {
   static get id(): string {
@@ -183,248 +186,401 @@ describe('src/commands/merge.ts', function () {
     return pr;
   }
 
-  test(`doesn't merge red prs`, async function () {
-    setupPolly('doesnt-merge-red-prs');
+  describe('merge', function () {
+    test(`doesn't merge red prs`, async function () {
+      setupPolly('doesnt-merge-red-prs');
 
-    let createdPr = await createPullRequest({
-      branch: 'tests/doesnt-merge-red-prs',
+      let createdPr = await createPullRequest({
+        branch: 'tests/doesnt-merge-red-prs',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'failure',
+      });
+
+      await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
     });
 
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'failure',
+    test('merges green prs when any collaborator approves and none reject', async function () {
+      setupPolly('merge-green-prs-when-collaborator-approves');
+
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'success',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.Ok);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('closed');
+      expect(reloadedPr.merged).toEqual(true);
     });
 
-    await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
+    test(`doesn't merge green prs when a collaborator approves but another collaborator rejects`, async function () {
+      setupPolly('doesnt-merge-green-when-one-collab-approves-and-another-rejects');
+
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'success',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      await githubOtherReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'REQUEST_CHANGES',
+        body: 'Please no',
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.Rejected);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
     });
 
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
+    test(`doesn't merge green prs with zero approvals`, async function () {
+      setupPolly('doesnt-merge-green-with-zero-approvals');
+
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'success',
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.NoApprovals);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
     });
 
-    expect(reloadedPr.state).toEqual('open');
+    test(`doesn't merge prs with no status`, async function () {
+      setupPolly('doesnt-merge-prs-with-no-status');
+
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.NoStatuses);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
+    });
+
+    test(`doesn't merge prs with some green status and some pending status`, async function () {
+      setupPolly('doesnt-merge-prs-with-some-green-and-some-pending-status');
+
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'pending',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'success',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.StatusPending);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
+    });
+
+    // branch protection stuff:
+    // TODO: doesn't do shit if mergeable false or null (null means merge commit not made; false means conflict or maybe other stuff)
   });
 
-  test('merges green prs when any collaborator approves and none reject', async function () {
-    setupPolly('merge-green-prs-when-collaborator-approves');
+  describe('mergeByContext(reviewContext)', function () {
+    it('calls merge', async function () {
+      setupPolly('merge-by-context-review');
 
-    let createdPr = await createPullRequest({
-      branch: 'tests/merge-green-prs-when-collaborator-approves',
+      let mergeCalled = false;
+
+      let branchName = 'tests/merge-by-context-review';
+      let createdPr = await createPullRequest({
+        branch: branchName,
+      });
+
+      let context: GitHubContext = {
+        repository: 'malleatus/nyx-example',
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        run_number: '123',
+        event: {
+          action: 'submitted',
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          pull_request: {
+            number: createdPr.number,
+          },
+        },
+      };
+
+      function _mergeFn({ token: argtoken, owner, repo, pullNumber }: MergeArgs) {
+        expect(argtoken).toEqual(token);
+        expect(owner).toEqual('malleatus');
+        expect(repo).toEqual('nyx-example');
+        expect(pullNumber).toEqual(createdPr.number);
+        mergeCalled = true;
+
+        return Promise.resolve(ExitCode.Ok);
+      }
+
+      await mergeByContext({
+        context,
+        token,
+        _mergeFn,
+      });
+
+      expect(mergeCalled).toBe(true);
     });
-
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'success',
-    });
-
-    await githubReviewer.pulls.createReview({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-      event: 'APPROVE',
-    });
-
-    let exitCode = await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
-    });
-
-    expect(exitCode).toEqual(ExitCode.Ok);
-
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-    });
-
-    expect(reloadedPr.state).toEqual('closed');
-    expect(reloadedPr.merged).toEqual(true);
   });
 
-  test(`doesn't merge green prs when a collaborator approves but another collaborator rejects`, async function () {
-    setupPolly('doesnt-merge-green-when-one-collab-approves-and-another-rejects');
+  describe('mergeByContext(statusContext)', function () {
+    it('calls merge when commit is on exactly one branch with same owner as the repo', async function () {
+      setupPolly('merge-by-context-commit-in-one-pr-from-repo-owner');
 
-    let createdPr = await createPullRequest({
-      branch: 'tests/merge-green-prs-when-collaborator-approves',
+      let mergeCalled = false;
+
+      let branchName = 'tests/merge-by-context-status';
+      let createdPr = await createPullRequest({
+        branch: branchName,
+      });
+
+      let sha = createdPr.head.sha;
+      let context: GitHubContext = {
+        repository: 'malleatus/nyx-example',
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        run_number: '123',
+        event: {
+          branches: [
+            {
+              name: branchName,
+              commit: [
+                {
+                  sha,
+                  url: '',
+                },
+              ],
+              protected: false,
+            },
+          ],
+        },
+      };
+
+      function _mergeFn({ token: argtoken, owner, repo, pullNumber }: MergeArgs) {
+        expect(argtoken).toEqual(token);
+        expect(owner).toEqual('malleatus');
+        expect(repo).toEqual('nyx-example');
+        expect(pullNumber).toEqual(createdPr.number);
+        mergeCalled = true;
+
+        return Promise.resolve(ExitCode.Ok);
+      }
+
+      await mergeByContext({
+        context,
+        token,
+        _mergeFn,
+      });
+
+      expect(mergeCalled).toBe(true);
     });
 
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'success',
+    it('does not call merge when commit is in no pr', async function () {
+      setupPolly('merge-by-context-commit-in-no-pr');
+
+      let mergeCalled = false;
+
+      const author = {
+        name: `testy mctester ${10_000 + Math.floor(Math.random() * 50_000)}`,
+        email: 'test@example.com',
+        date: '2008-08-09T16:13:31+12:00',
+      };
+      const { data: commit } = await github.git.createCommit({
+        repo,
+        owner,
+        message: 'test commit',
+        author,
+        parents: [rootCommit],
+        tree: rootTree,
+      });
+      // assert we really made a commit
+      expect(commit.sha.length).toBeGreaterThan(4);
+
+      let context: GitHubContext = {
+        repository: 'malleatus/nyx-example',
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        run_number: '123',
+        event: {
+          branches: [],
+        },
+      };
+
+      function _mergeFn(): Promise<ExitCode> {
+        throw new Error('merge called in error');
+      }
+
+      await mergeByContext({
+        context,
+        token,
+        _mergeFn,
+      });
+
+      expect(mergeCalled).toBe(false);
     });
 
-    await githubReviewer.pulls.createReview({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-      event: 'APPROVE',
+    it.skip('does something when commit is in a branch for a pr from outside the repo', function () {
+      expect('implemented').toEqual('true');
     });
 
-    await githubOtherReviewer.pulls.createReview({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-      event: 'REQUEST_CHANGES',
-      body: 'Please no',
+    it.skip('does something when commit is in multiple branches', function () {
+      expect('implemented').toEqual('true');
     });
 
-    let exitCode = await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
+    it.skip('does something when commit is in multiple prs', function () {
+      expect('implemented').toEqual('true');
     });
-
-    expect(exitCode).toEqual(ExitCode.Rejected);
-
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-    });
-
-    expect(reloadedPr.state).toEqual('open');
-    expect(reloadedPr.merged).toEqual(false);
   });
-
-  test(`doesn't merge green prs with zero approvals`, async function () {
-    setupPolly('doesnt-merge-green-with-zero-approvals');
-
-    let createdPr = await createPullRequest({
-      branch: 'tests/merge-green-prs-when-collaborator-approves',
-    });
-
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'success',
-    });
-
-    let exitCode = await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
-    });
-
-    expect(exitCode).toEqual(ExitCode.NoApprovals);
-
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-    });
-
-    expect(reloadedPr.state).toEqual('open');
-    expect(reloadedPr.merged).toEqual(false);
-  });
-
-  test(`doesn't merge prs with no status`, async function () {
-    setupPolly('doesnt-merge-prs-with-no-status');
-
-    let createdPr = await createPullRequest({
-      branch: 'tests/merge-green-prs-when-collaborator-approves',
-    });
-
-    await githubReviewer.pulls.createReview({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-      event: 'APPROVE',
-    });
-
-    let exitCode = await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
-    });
-
-    expect(exitCode).toEqual(ExitCode.NoStatuses);
-
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-    });
-
-    expect(reloadedPr.state).toEqual('open');
-    expect(reloadedPr.merged).toEqual(false);
-  });
-
-  test(`doesn't merge prs with some green status and some pending status`, async function () {
-    setupPolly('doesnt-merge-prs-with-some-green-and-some-pending-status');
-
-    let createdPr = await createPullRequest({
-      branch: 'tests/merge-green-prs-when-collaborator-approves',
-    });
-
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'pending',
-    });
-
-    await github.repos.createStatus({
-      owner,
-      repo,
-      sha: createdPr.head.sha,
-      state: 'success',
-    });
-
-    await githubReviewer.pulls.createReview({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-      event: 'APPROVE',
-    });
-
-    let exitCode = await merge({
-      owner,
-      repo,
-      token,
-      pullNumber: createdPr.number,
-    });
-
-    expect(exitCode).toEqual(ExitCode.StatusPending);
-
-    let { data: reloadedPr } = await github.pulls.get({
-      owner,
-      repo,
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      pull_number: createdPr.number,
-    });
-
-    expect(reloadedPr.state).toEqual('open');
-    expect(reloadedPr.merged).toEqual(false);
-  });
-
-  // branch protection stuff:
-  // TODO: doesn't do shit if mergeable false or null (null means merge commit not made; false means conflict or maybe other stuff)
 });

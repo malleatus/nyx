@@ -1,4 +1,4 @@
-describe('nyx.js', function () {
+describe('nyx', function () {
   it('exists', function () {
     // TODO: impl
   });
