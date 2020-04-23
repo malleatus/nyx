@@ -1,4 +1,11 @@
 import { Octokit } from '@octokit/rest';
+import {
+  GitHubContext,
+  readRepository,
+  isStatusEvent,
+  isPullRequestReviewEvent,
+} from '../utils/read-context';
+import assert from '../utils/assert';
 
 type PromiseFulfillmentValue<P extends Promise<unknown>> = P extends Promise<infer FV> ? FV : never;
 
@@ -10,6 +17,7 @@ export enum ExitCode {
   NoApprovals = 90,
   Rejected = 91,
   Unknown = 99,
+  DidNotRun = 100,
 }
 
 interface MainArgs {
@@ -113,4 +121,63 @@ export default async function merge({
   });
 
   return ExitCode.Ok;
+}
+
+interface ContextArgs {
+  context: GitHubContext;
+  token: string;
+
+  // for unit testing
+  _mergeFn?: typeof merge;
+}
+export async function mergeByContext({
+  context,
+  token,
+
+  _mergeFn = merge,
+}: ContextArgs): Promise<ExitCode> {
+  let { owner, repo } = readRepository(context);
+  const github = new Octokit({
+    auth: token,
+    userAgent: '@malleatus/nyx automerger (by context)',
+  });
+
+  let event = context.event;
+  if (isStatusEvent(event)) {
+    if (event.branches.length === 0) {
+      // status for a commit not on any branch
+      return ExitCode.DidNotRun;
+    }
+
+    // TODO: check each branch
+    let branchName = event.branches[0].name;
+    let pulls = (
+      await github.pulls.list({
+        owner,
+        repo,
+        head: `${owner}:${branchName}`,
+      })
+    ).data;
+
+    if (pulls.length === 0) {
+      // status for a commit not in a pr
+      return ExitCode.DidNotRun;
+    }
+
+    return _mergeFn({
+      owner,
+      repo,
+      pullNumber: pulls[0].number,
+      token,
+    });
+  } else if (isPullRequestReviewEvent(event)) {
+    return _mergeFn({
+      owner,
+      repo,
+      pullNumber: event.pull_request.number,
+      token,
+    });
+  } else {
+    assert(false, `unexpected event: ${event}`);
+  }
 }
