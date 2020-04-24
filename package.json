@@ -32,7 +32,7 @@
   "devDependencies": {
     "@pollyjs/adapter-node-http": "^4.0.4",
     "@pollyjs/core": "^4.0.4",
-    "@pollyjs/persister-fs": "^4.0.4",
+    "@pollyjs/persister-fs": "^4.1.0",
     "@sinonjs/fake-timers": "^6.0.1",
     "@tracerbench/har": "^3.0.15",
     "@types/jest": "^25.2.1",
