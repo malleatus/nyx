@@ -595,22 +595,22 @@
   dependencies:
     "@types/node" ">= 8"
 
-"@pollyjs/adapter-node-http@^4.0.4":
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-node-http/-/adapter-node-http-4.0.4.tgz#69419090bcae0a58596fd7f49a6b20180734e946"
-  integrity sha512-qNnUiKmLgfGr+ppu+Fpt3dhnGxQOLCzdQzpTaqYGuD+ZFlw4/71KRxemsdNqh9dev0ZPmgt3MJD6enmv9kWYMQ==
+"@pollyjs/adapter-node-http@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/adapter-node-http/-/adapter-node-http-4.2.0.tgz#76f37db1d39acfb6ce39450cc2719e92a4c66a97"
+  integrity sha512-KJBLd0WrbsdeTukkyN9iRU0AADnfm3zBYcwEKrnp/c2GpvNmBRL+bhFr8je6WqBsqyPgEHLmNyKJLp5wlgaKag==
   dependencies:
-    "@pollyjs/adapter" "^4.0.4"
-    "@pollyjs/utils" "^4.0.2"
+    "@pollyjs/adapter" "^4.1.0"
+    "@pollyjs/utils" "^4.1.0"
     lodash-es "^4.17.11"
     nock "^12.0.3"
 
-"@pollyjs/adapter@^4.0.4":
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/@pollyjs/adapter/-/adapter-4.0.4.tgz#267e3257b516e2d91a933a27cd37876762924323"
-  integrity sha512-kkewGOZjjiaa5jmz73gIe3Y+39HKDXLm9eKBTvJpUY1zWNqHb9rM3BjcRf/+6zjSAgUDOEeKT6bNfbjJUqiHng==
+"@pollyjs/adapter@^4.1.0":
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@pollyjs/adapter/-/adapter-4.1.0.tgz#05e080167db1a2ff7531062022d7e32ef31eaef9"
+  integrity sha512-/KGsXLqlaBX6Xcfzl37gq5Rl5wk3n+PR8XH17kZJXBw61sP8Xr6aMlNFbF4rG8CFTKFoV/bnGifTVrj6CUttvg==
   dependencies:
-    "@pollyjs/utils" "^4.0.2"
+    "@pollyjs/utils" "^4.1.0"
 
 "@pollyjs/core@^4.0.4":
   version "4.0.4"
@@ -660,15 +660,7 @@
     set-cookie-parser "^2.3.5"
     utf8-byte-length "^1.0.4"
 
-"@pollyjs/utils@^4.0.2":
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/@pollyjs/utils/-/utils-4.0.2.tgz#f7f9184178c51700c515c2909a6ea549fe0613e1"
-  integrity sha512-Rm0T83nTXeCWO+VS9tbe4hcw9mk5EcmsH/tWRK6lz9/DPc6ApQ3nzt0K5yEijJACbIRUNe722G8ASiLrcRJa2Q==
-  dependencies:
-    qs "^6.7.0"
-    url-parse "^1.4.7"
-
-"@pollyjs/utils@^4.1.0":
+"@pollyjs/utils@^4.0.2", "@pollyjs/utils@^4.1.0":
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/@pollyjs/utils/-/utils-4.1.0.tgz#7be8e9ab74918bfff2c80f279a1c6195d4fb3566"
   integrity sha512-+ZkVTG2Mm8Oc92vQiOZR72/cyh50G2omSu5jhHmcSO6zSDhwzZyEa+jim4eaUytESNtd/RJQnMukDOEJyGlSDw==
