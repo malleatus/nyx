@@ -23,7 +23,7 @@
     "test:jest:debug": "NODE_OPTIONS='--inspect-brk' jest --testTimeout=0 --runInBand"
   },
   "dependencies": {
-    "@octokit/rest": "^17.6.0",
+    "@octokit/rest": "^17.7.0",
     "@types/yargs": "^15.0.4",
     "hard-rejection": "^2.1.0",
     "moment": "^2.25.3",
