@@ -48,13 +48,17 @@ describe('src/commands/merge.ts', function () {
   const tokenB = process.env.GITHUB_AUTH_MALLEATUS_USER_B || 'fake-auth-token-bravo';
   const tokenC = process.env.GITHUB_AUTH_MALLEATUS_USER_C || 'fake-auth-token-charlie';
   let cleanupSteps: Array<Function> = [];
+  let isRecording = process.env.RECORD_HAR !== undefined;
+
+  let setTimeout = global.setTimeout;
+  let realNow = global.Date.now;
 
   function setupPolly(recordingName: string, config: PollyConfig = {}): Polly {
     polly = new Polly(recordingName, {
       adapters: ['node-http'],
       persister: SanitizingPersister,
-      mode: process.env.RECORD_HAR !== undefined ? 'record' : 'replay',
-      recordIfMissing: process.env.RECORD_HAR !== undefined,
+      mode: isRecording ? 'record' : 'replay',
+      recordIfMissing: isRecording,
       matchRequestsBy: {
         body(body, request) {
           if (
@@ -186,6 +190,51 @@ describe('src/commands/merge.ts', function () {
     return pr;
   }
 
+  interface WaitForChecksArgs {
+    ref: string;
+    status: 'queued' | 'in_progress' | 'completed';
+    timeout: number;
+  }
+  function waitForChecks({ ref, status, timeout }: WaitForChecksArgs) {
+    if (!isRecording) {
+      return;
+    }
+
+    let startTime = realNow();
+    let timeoutAt = startTime + timeout * 1_000;
+
+    polly.pause();
+    polly.passthrough();
+
+    return new Promise((resolve, reject) => {
+      function scheduleCheck() {
+        if (realNow() > timeoutAt) {
+          polly.record();
+          polly.play();
+          reject('wait for checks timeout');
+        }
+
+        setTimeout(async () => {
+          let { data: checks } = await github.checks.listForRef({
+            repo,
+            owner,
+            ref,
+          });
+
+          if (checks.total_count > 0 && checks.check_runs.some((cr) => cr.status === status)) {
+            polly.record();
+            polly.play();
+            resolve();
+          } else {
+            scheduleCheck();
+          }
+        }, 1_000);
+      }
+
+      scheduleCheck();
+    });
+  }
+
   describe('merge', function () {
     test(`doesn't merge red prs`, async function () {
       setupPolly('doesnt-merge-red-prs');
@@ -218,8 +267,8 @@ describe('src/commands/merge.ts', function () {
       expect(reloadedPr.state).toEqual('open');
     });
 
-    test('merges green prs when any collaborator approves and none reject', async function () {
-      setupPolly('merge-green-prs-when-collaborator-approves');
+    test('merges green prs (by status) when any collaborator approves and none reject', async function () {
+      setupPolly('merge-green-prs-by-status-when-collaborator-approves');
 
       let createdPr = await createPullRequest({
         branch: 'tests/merge-green-prs-when-collaborator-approves',
@@ -259,6 +308,48 @@ describe('src/commands/merge.ts', function () {
       expect(reloadedPr.state).toEqual('closed');
       expect(reloadedPr.merged).toEqual(true);
     });
+
+    test('merges green prs (by checks) when any collaborator approves and none reject', async function () {
+      setupPolly('merge-green-prs-by-checks-when-collaborator-approves');
+
+      // nyx-example has a CI that passes for all branches that don't contain the word "fail"
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      await waitForChecks({
+        ref: createdPr.head.ref,
+        status: 'completed',
+        timeout: 60,
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.Ok);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('closed');
+      expect(reloadedPr.merged).toEqual(true);
+    }, 60_000);
 
     test(`doesn't merge green prs when a collaborator approves but another collaborator rejects`, async function () {
       setupPolly('doesnt-merge-green-when-one-collab-approves-and-another-rejects');
@@ -345,8 +436,8 @@ describe('src/commands/merge.ts', function () {
       expect(reloadedPr.merged).toEqual(false);
     });
 
-    test(`doesn't merge prs with no status`, async function () {
-      setupPolly('doesnt-merge-prs-with-no-status');
+    test(`doesn't merge prs with no status or checks`, async function () {
+      setupPolly('doesnt-merge-prs-with-no-status-or-checks');
 
       let createdPr = await createPullRequest({
         branch: 'tests/merge-green-prs-when-collaborator-approves',
@@ -429,8 +520,98 @@ describe('src/commands/merge.ts', function () {
       expect(reloadedPr.merged).toEqual(false);
     });
 
-    // branch protection stuff:
-    // TODO: doesn't do shit if mergeable false or null (null means merge commit not made; false means conflict or maybe other stuff)
+    test(`doesn't merge prs with some green status and some red checks`, async function () {
+      setupPolly('doesnt-merge-prs-with-some-green-status-and-some-red-checks');
+
+      let createdPr = await createPullRequest({
+        // nyx-example CI will fail the branch if it contains the substring 'fail'
+        branch: 'tests/fail-branch-doesnt-merge-prs-with-some-green-status-some-red-checks',
+      });
+
+      await github.repos.createStatus({
+        owner,
+        repo,
+        sha: createdPr.head.sha,
+        state: 'success',
+        description: "test commit status (david&rob don't get confused: you did this)",
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      await waitForChecks({
+        ref: createdPr.head.ref,
+        status: 'completed',
+        timeout: 60,
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.ChecksRed);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
+    }, 60_000);
+
+    test(`doesn't merge prs with pending checks (queued or in progress)`, async function () {
+      setupPolly('doesnt-merge-prs-with-pending-checks');
+
+      let createdPr = await createPullRequest({
+        // nyx-example CI will fail the branch if it contains the substring 'fail'
+        branch: 'tests/fail-branch-doesnt-merge-prs-with-some-green-status-some-red-checks',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      await waitForChecks({
+        ref: createdPr.head.ref,
+        status: 'queued',
+        timeout: 60,
+      });
+
+      // TODO: strictly speaking there's a race here between the check going from queued → in_progress → completed
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.ChecksPending);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('open');
+      expect(reloadedPr.merged).toEqual(false);
+    }, 60_000);
   });
 
   describe('mergeByContext(reviewContext)', function () {

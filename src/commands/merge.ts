@@ -14,6 +14,9 @@ export enum ExitCode {
   NoStatuses = 80,
   StatusRed = 81,
   StatusPending = 82,
+  ChecksRed = 83,
+  // either in progress or still only queued
+  ChecksPending = 84,
   NoApprovals = 90,
   Rejected = 91,
   Unknown = 99,
@@ -69,10 +72,6 @@ export default async function merge({
     ref: pr.head.ref,
   });
 
-  if (statuses.length === 0) {
-    return ExitCode.NoStatuses;
-  }
-
   if (statuses.some((s) => s.state === 'failure')) {
     return ExitCode.StatusRed;
   }
@@ -85,6 +84,26 @@ export default async function merge({
     // none are failure; none are pending, presumably we have a bug or there is
     // a new kind of status
     return ExitCode.Unknown;
+  }
+
+  let { data: checks } = await github.checks.listForRef({
+    owner,
+    repo,
+    ref: pr.head.ref,
+  });
+
+  if (checks.total_count === 0 && statuses.length === 0) {
+    return ExitCode.NoStatuses;
+  }
+
+  if (checks.check_runs.some((cr) => cr.status !== 'completed')) {
+    return ExitCode.ChecksPending;
+  }
+
+  // success | failure | neutral | cancelled | timed_out | action_required
+  if (checks.check_runs.some((cr) => cr.conclusion !== 'success')) {
+    // TODO: maybe tolerate success check + neutral check?
+    return ExitCode.ChecksRed;
   }
 
   let { data: reviews } = await github.pulls.listReviews({
