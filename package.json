@@ -16,7 +16,7 @@
     "build:ts": "tsc",
     "build:ts:defs": "tsc --declaration --emitDeclarationOnly",
     "build:watch": "tsc --watch",
-    "repl": "ts-node -D 7017 -D 2393",
+    "repl": "ts-node -D 7017 -D 2393 -D 1007",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint build test:jest",
     "test:jest": "jest",
