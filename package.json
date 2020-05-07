@@ -30,8 +30,8 @@
     "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "@pollyjs/adapter-node-http": "^4.0.4",
-    "@pollyjs/core": "^4.0.4",
+    "@pollyjs/adapter-node-http": "^4.0.21",
+    "@pollyjs/core": "^4.0.21",
     "@pollyjs/persister-fs": "^4.2.1",
     "@sinonjs/fake-timers": "^6.0.1",
     "@tracerbench/har": "^3.0.16",
