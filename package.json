@@ -26,7 +26,7 @@
     "@octokit/rest": "^17.9.1",
     "@types/yargs": "^15.0.5",
     "hard-rejection": "^2.1.0",
-    "moment": "^2.25.3",
+    "moment": "^2.26.0",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
