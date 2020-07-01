@@ -761,10 +761,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@tracerbench/har@^3.0.16":
-  version "3.0.16"
-  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-3.0.16.tgz#2c3a5ce0f78687e00092c19ec63b47214efc8f51"
-  integrity sha512-OD9ROzD4eeh5IpLiMog2CEGbPlodmSN9X5g0uqiucmfkmBFFHCLX8tfAwGw3ocA8NCRnspB3m0mRd+q1m1+r4w==
+"@tracerbench/har@^3.1.2":
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-3.1.2.tgz#3045380c1c207ff5e5178976bbef04b3dd883b8a"
+  integrity sha512-qfAIVjOAn296pEJh69uNiRDvtXb0zwGuI5aFY/XhUmNlKpvkCUWJIrLriVo0sdo34u4A2Dk7mC7yWvnq3W4MYA==
 
 "@types/babel__core@^7.1.7":
   version "7.1.7"
