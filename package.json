@@ -36,7 +36,7 @@
     "@sinonjs/fake-timers": "^6.0.1",
     "@tracerbench/har": "^3.1.2",
     "@types/jest": "^26.0.14",
-    "@types/pollyjs__adapter-node-http": "^2.0.0",
+    "@types/pollyjs__adapter-node-http": "^2.0.1",
     "@types/pollyjs__core": "^4.3.1",
     "@types/pollyjs__persister-fs": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
