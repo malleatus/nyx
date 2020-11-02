@@ -27,7 +27,7 @@
     "@types/yargs": "^15.0.9",
     "hard-rejection": "^2.1.0",
     "moment": "^2.29.1",
-    "yargs": "^15.4.1"
+    "yargs": "^16.1.0"
   },
   "devDependencies": {
     "@pollyjs/adapter-node-http": "^5.0.0",
