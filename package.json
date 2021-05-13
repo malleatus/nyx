@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@pollyjs/adapter-node-http": "^5.1.0",
-    "@pollyjs/core": "^5.0.0",
+    "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
     "@sinonjs/fake-timers": "^6.0.1",
     "@tracerbench/har": "^6.0.0",
