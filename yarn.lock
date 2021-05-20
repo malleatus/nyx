@@ -881,10 +881,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@tracerbench/har@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-6.0.0.tgz#762b7e7f2c4743f53d6eb9ca8bf1ccff369adf30"
-  integrity sha512-VqbZ0D6Sts5B9A0WsMXOS14bLiz0RRX3J24XgsgXiqkM8/Liku/+yWxg/1amqfrSH5saDltli/6BMcQ7taiEfA==
+"@tracerbench/har@^6.1.0":
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-6.1.0.tgz#bb5df4a77cc32041576c576c34c402c2d86b8b7a"
+  integrity sha512-UMyWPjXBWsVMVacxZ3CK0amNVCkmGMUuCWGEk/3NkfPyBE+vk717m2fwHSH5zv/qtqJU2MnO5n0l7LkSDdjqkw==
 
 "@types/babel__core@^7.1.7":
   version "7.1.7"
