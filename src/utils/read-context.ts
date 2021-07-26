@@ -52,9 +52,7 @@ export function isPullRequestReviewEvent(
 // https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#github-context
 export type GitHubContext = GitHubContextWithReviewEvent | GitHubContextWithStatusEvent;
 
-export function readRepository(
-  context: GitHubContext
-): {
+export function readRepository(context: GitHubContext): {
   owner: string;
   repo: string;
 } {
