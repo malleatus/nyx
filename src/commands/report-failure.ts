@@ -2,8 +2,10 @@
 import { Octokit } from '@octokit/rest';
 import m from 'moment';
 
+const IssuePrefix = 'Nightly Run Failure';
+
 function getIssueTitle(runId: string): string {
-  return `Nightly Run Failure: ${runId}`;
+  return `${IssuePrefix}: ${runId}`;
 }
 
 interface CreateIssueArgs {
@@ -48,10 +50,9 @@ export default async function reportFailure({
     userAgent: '@malleatus/nyx failure reporter',
   });
 
-  const issueTitle = getIssueTitle(runId);
   // https://help.github.com/en/github/searching-for-information-on-github/searching-issues-and-pull-requests
   const issueSearch = await github.search.issuesAndPullRequests({
-    q: `repo:${owner}/${repo} state:open is:issue label:CI in:title ${issueTitle}`,
+    q: `repo:${owner}/${repo} state:open is:issue label:CI in:title "${IssuePrefix}"`,
   });
 
   if (issueSearch.data.total_count > 0) {
