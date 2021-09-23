@@ -19,7 +19,8 @@
     "repl": "ts-node -D 7017 -D 2393 -D 1007",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint build test:jest",
-    "test:jest": "jest",
+    "test:jest": "jest --runInBand",
+    "test:jest:record": "RECORD_HAR=1 jest --runInBand",
     "test:jest:debug": "NODE_OPTIONS='--inspect-brk' jest --testTimeout=0 --runInBand"
   },
   "dependencies": {
