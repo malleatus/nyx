@@ -19,11 +19,9 @@ describe('readContext', function () {
         sha: 'abc123',
         state: 'success',
         description: '',
-        // eslint-disable-next-line @typescript-eslint/camelcase
         target_url: 'https://example.com/something-or-other',
         branches: [],
       },
-      // eslint-disable-next-line @typescript-eslint/camelcase
       run_number: 20,
       repository: 'malleatus/nyx-example',
     };

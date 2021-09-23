@@ -6,17 +6,13 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: ['@typescript-eslint', 'node'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:node/recommended',
-  ],
+  extends: ['plugin:node/recommended', 'plugin:@typescript-eslint/recommended'],
   env: {
     node: true,
   },
   rules: {
     '@typescript-eslint/ban-ts-ignore': 'off',
-    '@typescript-eslint/camelcase': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
@@ -60,7 +56,7 @@ module.exports = {
     },
     {
       // test files
-      files: ['__tests__/**/*.[jt]s', '**/*.test.[jt]s'],
+      files: ['src/__utils__/**/*.[jt]s', '**/*.test.[jt]s'],
       env: {
         jest: true,
       },
