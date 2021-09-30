@@ -62,7 +62,6 @@ export default async function merge({
   let { data: pr } = await github.pulls.get({
     owner,
     repo,
-    // eslint-disable-next-line @typescript-eslint/camelcase
     pull_number: pullNumber,
   });
 
@@ -109,7 +108,6 @@ export default async function merge({
   let { data: reviews } = await github.pulls.listReviews({
     owner,
     repo,
-    // eslint-disable-next-line @typescript-eslint/camelcase
     pull_number: pullNumber,
   });
 
@@ -135,7 +133,6 @@ export default async function merge({
   await github.pulls.merge({
     owner,
     repo,
-    // eslint-disable-next-line @typescript-eslint/camelcase
     pull_number: pullNumber,
   });
 

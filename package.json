@@ -19,7 +19,8 @@
     "repl": "ts-node -D 7017 -D 2393 -D 1007",
     "lint": "eslint --cache . --ext js,ts",
     "test": "npm-run-all lint build test:jest",
-    "test:jest": "jest",
+    "test:jest": "jest --runInBand",
+    "test:jest:record": "RECORD_HAR=1 jest --runInBand",
     "test:jest:debug": "NODE_OPTIONS='--inspect-brk' jest --testTimeout=0 --runInBand"
   },
   "dependencies": {
@@ -39,8 +40,8 @@
     "@types/pollyjs__adapter-node-http": "^2.0.1",
     "@types/pollyjs__core": "^4.3.3",
     "@types/pollyjs__persister-fs": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^2.34.0",
-    "@typescript-eslint/parser": "^2.34.0",
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
+    "@typescript-eslint/parser": "^4.31.2",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-node": "^11.1.0",
@@ -53,14 +54,16 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^25.5.1",
     "ts-node": "^9.1.1",
-    "typescript": "~3.9.10"
+    "typescript": "~4.4.3"
   },
   "files": [
     "CHANGELOG.md",
     "LICENSE",
     "package.json",
     "dist/*",
-    "!dist/**/*.test.*"
+    "!dist/**/*.test.*",
+    "!dist/__tests__",
+    "!dist/__utils__"
   ],
   "engines": {
     "node": "10.* || >= 12.*"

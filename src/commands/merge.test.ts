@@ -1,43 +1,16 @@
-import * as path from 'path';
-import { Polly, PollyConfig, Headers } from '@pollyjs/core';
-import NodeHttpAdapter from '@pollyjs/adapter-node-http';
-import FSPersister from '@pollyjs/persister-fs';
-import merge, { mergeByContext, ExitCode } from './merge';
-import setupHardRejection from 'hard-rejection';
-import { Archive } from '@tracerbench/har';
 import { Octokit } from '@octokit/rest';
 import FakeTimers, { FakeClock } from '@sinonjs/fake-timers';
+import setupHardRejection from 'hard-rejection';
 import { GitHubContext } from '../utils/read-context';
+import { polly, setupPolly } from '../__utils__/polly';
+import { cleanup, cleanupSteps } from '../__utils__/cleanup';
+import merge, { ExitCode, mergeByContext } from './merge';
 
 type MergeArgs = Parameters<typeof merge>[0];
 
-class SanitizingPersister extends FSPersister {
-  static get id(): string {
-    return 'sanitizing-fs';
-  }
-
-  get options(): PollyConfig['persisterOptions'] {
-    return {
-      recordingsDir: path.resolve(__dirname, '..', '..', '.recordings'),
-    };
-  }
-
-  // ensure that the authorization token is not written to disk
-  saveRecording(recordingId: string, data: Archive): void {
-    data.log.entries.forEach((entry) => {
-      entry.request.headers = entry.request.headers.filter((h) => h.name !== 'authorization');
-    });
-
-    return super.saveRecording(recordingId, data);
-  }
-}
-
 setupHardRejection();
 
-Polly.register(NodeHttpAdapter);
-
 describe('src/commands/merge.ts', function () {
-  let polly: Polly;
   let github: Octokit;
   let githubReviewer: Octokit;
   let githubOtherReviewer: Octokit;
@@ -47,57 +20,10 @@ describe('src/commands/merge.ts', function () {
   const token = process.env.GITHUB_AUTH_MALLEATUS_USER_A || 'fake-auth-token-alpha';
   const tokenB = process.env.GITHUB_AUTH_MALLEATUS_USER_B || 'fake-auth-token-bravo';
   const tokenC = process.env.GITHUB_AUTH_MALLEATUS_USER_C || 'fake-auth-token-charlie';
-  let cleanupSteps: Array<Function> = [];
   let isRecording = process.env.RECORD_HAR !== undefined;
 
   let setTimeout = global.setTimeout;
   let realNow = global.Date.now;
-
-  function setupPolly(recordingName: string, config: PollyConfig = {}): Polly {
-    polly = new Polly(recordingName, {
-      adapters: ['node-http'],
-      persister: SanitizingPersister,
-      mode: isRecording ? 'record' : 'replay',
-      recordIfMissing: isRecording,
-      matchRequestsBy: {
-        body(body, request) {
-          if (
-            request.method === 'POST' &&
-            request.url === 'https://api.github.com/repos/malleatus/nyx-example/git/commits'
-          ) {
-            const requestBody = JSON.parse(body);
-            requestBody.author.name = 'testy mctester';
-
-            return JSON.stringify(requestBody);
-          }
-
-          return body;
-        },
-
-        // TODO: simplify this using @rwjblue magic
-        headers(headers: Headers): Headers {
-          /*
-            remove certain headers from being used to match recordings:
-
-            * authorization -- Avoid saving any authorization codes into
-              `.har` files, and avoid differences when two different users run
-              the tests
-            * user-agent -- @octokit/rest **always** appends Node version and
-              platform information into the userAgent (even when the Octokit
-              instance has a custom userAgent). See
-              https://github.com/octokit/rest.js/issues/907#issuecomment-422217573
-              for a quick summary.
-          */
-          const { authorization, 'user-agent': userAgent, ...rest } = headers;
-
-          return rest;
-        },
-      },
-      ...config,
-    });
-
-    return polly;
-  }
 
   beforeEach(() => {
     github = new Octokit({
@@ -118,15 +44,7 @@ describe('src/commands/merge.ts', function () {
   });
 
   afterEach(async () => {
-    // TODO: always remove all refs matching refs/heads/tests/*
-    for (let cleanupStep of cleanupSteps) {
-      await cleanupStep();
-    }
-    cleanupSteps = [];
-
-    if (polly) {
-      await polly.stop();
-    }
+    await cleanup();
     clock.uninstall();
   });
 
@@ -174,7 +92,6 @@ describe('src/commands/merge.ts', function () {
       await github.pulls.update({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: pr.number,
         state: 'closed',
       });
@@ -195,6 +112,7 @@ describe('src/commands/merge.ts', function () {
     status: 'queued' | 'in_progress' | 'completed';
     timeout: number;
   }
+  // TODO: move to waiters.ts
   function waitForChecks({ ref, status, timeout }: WaitForChecksArgs) {
     if (!isRecording) {
       return;
@@ -203,14 +121,14 @@ describe('src/commands/merge.ts', function () {
     let startTime = realNow();
     let timeoutAt = startTime + timeout * 1_000;
 
-    polly.pause();
-    polly.passthrough();
+    polly?.pause();
+    polly?.passthrough();
 
     return new Promise((resolve, reject) => {
       function scheduleCheck() {
         if (realNow() > timeoutAt) {
-          polly.record();
-          polly.play();
+          polly?.record();
+          polly?.play();
           reject('wait for checks timeout');
         }
 
@@ -222,9 +140,9 @@ describe('src/commands/merge.ts', function () {
           });
 
           if (checks.total_count > 0 && checks.check_runs.some((cr) => cr.status === status)) {
-            polly.record();
-            polly.play();
-            resolve();
+            polly?.record();
+            polly?.play();
+            resolve(true);
           } else {
             scheduleCheck();
           }
@@ -260,7 +178,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -284,43 +201,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        pull_number: createdPr.number,
-        event: 'APPROVE',
-      });
-
-      let exitCode = await merge({
-        owner,
-        repo,
-        token,
-        pullNumber: createdPr.number,
-      });
-
-      expect(exitCode).toEqual(ExitCode.Ok);
-
-      let { data: reloadedPr } = await github.pulls.get({
-        owner,
-        repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        pull_number: createdPr.number,
-      });
-
-      expect(reloadedPr.state).toEqual('closed');
-      expect(reloadedPr.merged).toEqual(true);
-    });
-
-    test('merges green prs (by checks) when any collaborator approves and none reject', async function () {
-      setupPolly('merge-green-prs-by-checks-when-collaborator-approves');
-
-      // nyx-example has a CI that passes for all branches that don't contain the word "fail"
-      let createdPr = await createPullRequest({
-        branch: 'tests/merge-green-prs-when-collaborator-approves',
-      });
-
-      await githubReviewer.pulls.createReview({
-        owner,
-        repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -343,7 +223,46 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        pull_number: createdPr.number,
+      });
+
+      expect(reloadedPr.state).toEqual('closed');
+      expect(reloadedPr.merged).toEqual(true);
+    });
+
+    test('merges green prs (by checks) when any collaborator approves and none reject', async function () {
+      setupPolly('merge-green-prs-by-checks-when-collaborator-approves');
+
+      // nyx-example has a CI that passes for all branches that don't contain the word "fail"
+      let createdPr = await createPullRequest({
+        branch: 'tests/merge-green-prs-when-collaborator-approves',
+      });
+
+      await githubReviewer.pulls.createReview({
+        owner,
+        repo,
+        pull_number: createdPr.number,
+        event: 'APPROVE',
+      });
+
+      await waitForChecks({
+        ref: createdPr.head.ref,
+        status: 'completed',
+        timeout: 60,
+      });
+
+      let exitCode = await merge({
+        owner,
+        repo,
+        token,
+        pullNumber: createdPr.number,
+      });
+
+      expect(exitCode).toEqual(ExitCode.Ok);
+
+      let { data: reloadedPr } = await github.pulls.get({
+        owner,
+        repo,
         pull_number: createdPr.number,
       });
 
@@ -368,7 +287,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -376,10 +294,15 @@ describe('src/commands/merge.ts', function () {
       await githubOtherReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'REQUEST_CHANGES',
         body: 'Please no',
+      });
+
+      await waitForChecks({
+        ref: 'tests/merge-green-prs-when-collaborator-approves',
+        status: 'completed',
+        timeout: 60,
       });
 
       let exitCode = await merge({
@@ -394,7 +317,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -428,7 +350,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -446,7 +367,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -463,7 +383,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -495,7 +414,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -512,7 +430,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -539,7 +456,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -562,7 +478,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -581,7 +496,6 @@ describe('src/commands/merge.ts', function () {
       await githubReviewer.pulls.createReview({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
         event: 'APPROVE',
       });
@@ -605,7 +519,6 @@ describe('src/commands/merge.ts', function () {
       let { data: reloadedPr } = await github.pulls.get({
         owner,
         repo,
-        // eslint-disable-next-line @typescript-eslint/camelcase
         pull_number: createdPr.number,
       });
 
@@ -627,11 +540,9 @@ describe('src/commands/merge.ts', function () {
 
       let context: GitHubContext = {
         repository: 'malleatus/nyx-example',
-        // eslint-disable-next-line @typescript-eslint/camelcase
         run_number: '123',
         event: {
           action: 'submitted',
-          // eslint-disable-next-line @typescript-eslint/camelcase
           pull_request: {
             number: createdPr.number,
           },
@@ -672,7 +583,6 @@ describe('src/commands/merge.ts', function () {
       let sha = createdPr.head.sha;
       let context: GitHubContext = {
         repository: 'malleatus/nyx-example',
-        // eslint-disable-next-line @typescript-eslint/camelcase
         run_number: '123',
         event: {
           branches: [
@@ -732,7 +642,6 @@ describe('src/commands/merge.ts', function () {
 
       let context: GitHubContext = {
         repository: 'malleatus/nyx-example',
-        // eslint-disable-next-line @typescript-eslint/camelcase
         run_number: '123',
         event: {
           branches: [],
