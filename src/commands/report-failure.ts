@@ -152,7 +152,7 @@ export default async function reportFailure({
       `Issue ${issueNumber} already exists summarizing nightly failures; adding ${runId}`
     );
     let existingIssueNumber = issueNumber;
-    let existingIssueBody = issue.body;
+    let existingIssueBody = issue.body ?? '';
     return await updateIssue({
       github,
       runId,
