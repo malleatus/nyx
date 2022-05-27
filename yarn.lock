@@ -746,10 +746,10 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
   integrity sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==
 
-"@tracerbench/har@^6.1.0":
-  version "6.1.1"
-  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-6.1.1.tgz#72847bbb0b13fc3fe5eac0263ab91a920308f09c"
-  integrity sha512-DpD3MyHOgo3ZLbdQNDSP6Fvm+ts08mgxoG1nY6IRo5x1qtJjPDFAYB2H4nn9PqbzWNjQeQSDXtQz9U0tfRVMMw==
+"@tracerbench/har@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@tracerbench/har/-/har-7.0.0.tgz#005e30d103c3bc132f6277a7c8304a7530253cbe"
+  integrity sha512-LwnLELonoaxN83ND5jQ4FfO9vTj8NRKOacQRSQ5D3ra4m0CBQJv7DI8Ob69xHdAOtWSKWgXKT/9FGWGUw9Ob1w==
 
 "@types/babel__core@^7.1.7":
   version "7.1.16"
