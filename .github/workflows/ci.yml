@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: volta-cli/action@v2.0.0
+      - uses: volta-cli/action@v2.0.1
       - name: yarn install
         run: yarn --frozen-lockfile --install
       - name: lint
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: volta-cli/action@v2.0.0
+      - uses: volta-cli/action@v2.0.1
       - name: yarn install
         run: yarn --frozen-lockfile --install
       - name: test
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: volta-cli/action@v2.0.0
+      - uses: volta-cli/action@v2.0.1
         with:
           node-version: ${{matrix.node}}
       - name: yarn install
