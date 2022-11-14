@@ -645,10 +645,10 @@
   dependencies:
     "@pollyjs/utils" "^5.1.1"
 
-"@pollyjs/core@^6.0.4":
-  version "6.0.4"
-  resolved "https://registry.yarnpkg.com/@pollyjs/core/-/core-6.0.4.tgz#088113e6c57be16f7a388dc75675c18b77cea339"
-  integrity sha512-kqp4yHtaketVLX1KoK4dog4XC3DXPhy/gLcKtJZA+pLob1U9FtdZzF8ZdI7JfKd0mSfKZbFzZaTbdUOoaXFD7w==
+"@pollyjs/core@*", "@pollyjs/core@^6.0.5":
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/@pollyjs/core/-/core-6.0.5.tgz#e4e3eaf3e0c6a289ec7f558cb2d03a44317989c1"
+  integrity sha512-LwKj20QT+VtDTv3HslK1KseTnNP04J8giz71W8RmwjYDSC5PRQvqcY3t86xd9xgVgbfN29in9ZYjAotqsmbyOw==
   dependencies:
     "@pollyjs/utils" "^6.0.1"
     "@sindresorhus/fnv1a" "^2.0.1"
@@ -879,13 +879,20 @@
   dependencies:
     "@types/pollyjs__core" "*"
 
-"@types/pollyjs__core@*", "@types/pollyjs__core@^4.3.3":
+"@types/pollyjs__core@*":
   version "4.3.3"
   resolved "https://registry.yarnpkg.com/@types/pollyjs__core/-/pollyjs__core-4.3.3.tgz#a666d71ac9e977c91380db33c6621270b8b444a5"
   integrity sha512-qPLLq+be0L45z/EawTWXdsQZINCHgRxqQJUDQsvLTDGvnnV6y5rjK3c8mYtCxkVFmKxNIBsicI1+ldHPgPBAjA==
   dependencies:
     "@types/pollyjs__adapter" "*"
     "@types/pollyjs__persister" "*"
+
+"@types/pollyjs__core@^6.0.5":
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/@types/pollyjs__core/-/pollyjs__core-6.0.5.tgz#22ebb8d17528e166b9e9459f6071f3f567ac2fca"
+  integrity sha512-gKoPkI7PZt6sPRU+mSCvh/HnPtkH/AHgZRWY+tjAs/iX0wwqQwyh+u+RrUxVR1XgSOOiaMTR06dMzY/P+j0OiA==
+  dependencies:
+    "@pollyjs/core" "*"
 
 "@types/pollyjs__persister-fs@^2.0.1":
   version "2.0.1"
