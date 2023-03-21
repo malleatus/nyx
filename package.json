@@ -25,10 +25,10 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.12.0",
-    "@types/yargs": "^17.0.15",
+    "@types/yargs": "^17.0.23",
     "hard-rejection": "^2.1.0",
     "moment": "^2.29.4",
-    "yargs": "^17.6.2"
+    "yargs": "^17.7.1"
   },
   "devDependencies": {
     "@pollyjs/adapter-node-http": "^5.1.1",
